@@ -13,7 +13,8 @@ async function main() {
   (window as unknown as { app: App }).app = app;
 
   // Load sample data
-  await app.loadModel("/castle.spz");
+  //await app.loadModel("/bin.spz");
+  await app.loadModel("/castle.ply");
 
   const vase = await app.loadModel("/vase.spz");
   vase.position.y = 1;
