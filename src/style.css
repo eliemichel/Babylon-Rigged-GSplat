@@ -1,0 +1,71 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: rgb(225, 225, 225);
+  background-color: #262626;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#renderContainer {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+#renderCanvas {
+  touch-action: none;
+  width: 100%;
+  height: 100%;
+}
+
+#statusBar {
+  height: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0.3em;
+  gap: 0.3em;
+}
+
+/* Inline Spinner */
+
+.inline-spinner {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  vertical-align: top;
+}
+
+.inline-spinner::before {
+  content: "";
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  height: 1em;
+  display: block;
+  width: 1em;
+  border-radius: 1em;
+  border-bottom-color: white;
+  animation: inline-spinner-rotation 1s linear infinite;
+}
+
+@keyframes inline-spinner-rotation {
+  from {
+      transform: rotate(0deg);
+  }
+  to {
+      transform: rotate(360deg);
+  }
+}

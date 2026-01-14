@@ -1,0 +1,20 @@
+{
+  "name": "multi-gsplat-babylonjs-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:check": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "@babylonjs/core": "file:../Babylon.js/packages/dev/core",
+    "@babylonjs/loaders": "file:../Babylon.js/packages/dev/loaders"
+  }
+}
