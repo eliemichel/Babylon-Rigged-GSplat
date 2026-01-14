@@ -1,6 +1,6 @@
 # Multi-GSplat BabylonJS Example
 
-This example demonstrates how to use multiple Gaussian Splatting meshes with proper depth sorting using the rig node support in BabylonJS.
+This example demonstrates how to use multiple Gaussian Splatting meshes with proper depth sorting using the rig node support proposed for BabylonJS in [this PR](https://github.com/BabylonJS/Babylon.js/pull/17679).
 
 ## Problem
 
@@ -14,15 +14,20 @@ This example uses the rig node support added to `GaussianSplattingMesh`. Each sp
 
 This example uses the locally modified Babylon.js from `../Babylon.js/`.
 
-1. Build Babylon.js packages first:
+1. Get the modify version of Babylon.js next to this repo and build it:
    ```bash
-   cd ../Babylon.js
+   # Babylon.js is expected to be next to this repo
+   git clone -b eliemichel/rigged-gsplat https://github.com/eliemichel/Babylon.js
+   cd Babylon.js
    npm install
    npm run build:dev
+   cd .. # Back to the parent directory
    ```
 
 2. Install dependencies in this directory:
    ```bash
+   git clone https://github.com/eliemichel/Babylon-Rigged-GSplat
+   cd Babylon-Rigged-GSplat
    npm install
    ```
 

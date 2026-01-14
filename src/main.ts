@@ -15,8 +15,8 @@ async function main() {
   // Load sample data
   await app.loadModel("/castle.spz");
 
-  const flower = await app.loadModel("/32GT_flower_crop01_nosh.spz");
-  flower.position.y = 1;
+  const vase = await app.loadModel("/vase.spz");
+  vase.position.y = 1;
 }
 
 main();
