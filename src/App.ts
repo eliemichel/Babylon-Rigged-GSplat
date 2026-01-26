@@ -8,6 +8,10 @@ import {
     GizmoManager,
     Mesh,
     GaussianSplattingMesh,
+    MeshBuilder,
+    Color3,
+    StandardMaterial,
+    HemisphericLight,
 } from '@babylonjs/core';
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 
@@ -115,6 +119,17 @@ export default class App {
     }
 
     private setupMultiSplat(scene: Scene): MultiSplat {
+        // Also ass a test mesh before the splat mesh.
+        const testMesh = MeshBuilder.CreateBox("testMesh", { size: 1 }, scene);
+        // Add a flat material to the test mesh.
+        const flatMaterial = new StandardMaterial("flatMaterial", scene);
+        flatMaterial.diffuseColor = new Color3(1, 0, 0);
+        flatMaterial.backFaceCulling = false;
+        testMesh.material = flatMaterial;
+        // Add sun light to the scene.
+        const sunLight = new HemisphericLight("sunLight", new Vector3(0, 1, 0), scene);
+        sunLight.intensity = 1;
+
         const renderMesh = new GaussianSplattingMesh(
             "renderMesh",
             null,
@@ -129,35 +144,24 @@ export default class App {
     }
 
     private createGizmoManager(): GizmoManager {
-        const { multiSplat, babylon } = this.controllers;
+        const { babylon } = this.controllers;
         const { scene } = babylon;
         const gizmoManager = new GizmoManager(scene);
         gizmoManager.positionGizmoEnabled = true;
+        gizmoManager.rotationGizmoEnabled = true;
         gizmoManager.usePointerToAttachGizmos = false;
-
-        gizmoManager.gizmos.positionGizmo?.onDragObservable.add(() => {
-            const target = gizmoManager.attachedMesh;
-            if (target && target.metadata?.partIndex !== undefined) {
-                const partIndex = target.metadata.partIndex as number;
-                multiSplat.renderMesh.setWorldMatrixForPart(partIndex, target.getWorldMatrix());
-            }
-        });
-
+        babylon.gizmoManagers.push(gizmoManager);
         return gizmoManager;
     }
 
-    /* ********** PUBLIC METHODS ********** */
-
     /**
-     * Load a GSplat model from a path/URL.
+     * Load a GaussianSplattingMesh from a path/URL and wait for it to load.
      * @param modelPath - The path/URL of the model to load.
-     * @returns The loaded mesh.
+     * @returns The loaded GaussianSplattingMesh.
      */
-    public async loadModel(modelPath: string): Promise<Mesh> {
-        const { statusBar, babylon, multiSplat } = this.controllers;
+    async loadGaussianSplattingMesh(modelPath: string): Promise<GaussianSplattingMesh> {
+        const { babylon } = this.controllers;
         const { scene } = babylon;
-
-        const statusHandle = statusBar.setStatus(`Loading '${modelPath}'...`);
 
         const mesh = new GaussianSplattingMesh(
             modelPath, // name
@@ -172,6 +176,23 @@ export default class App {
             await loadingPromise;
         }
 
+        return mesh;
+    }
+
+    /* ********** PUBLIC METHODS ********** */
+
+    /**
+     * Load a GSplat model from a path/URL.
+     * @param modelPath - The path/URL of the model to load.
+     * @returns The loaded mesh.
+     */
+    public async loadModel(modelPath: string): Promise<Mesh> {
+        const { statusBar, multiSplat } = this.controllers;
+
+        const statusHandle = statusBar.setStatus(`Loading '${modelPath}'...`);
+
+        const mesh = await this.loadGaussianSplattingMesh(modelPath);
+
         const placeholderMesh = multiSplat.renderMesh.addPart(mesh);
 
         statusBar.unsetStatus(statusHandle);
@@ -179,7 +200,6 @@ export default class App {
         // Attach gizmo to the latest loaded mesh
         const gizmoManager = this.createGizmoManager();
         gizmoManager.attachToMesh(placeholderMesh);
-        babylon.gizmoManagers.push(gizmoManager);
 
         return placeholderMesh;
     }
