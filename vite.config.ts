@@ -10,6 +10,8 @@ export default defineConfig({
       // Resolve Babylon.js internal aliases used in dev packages
       'core': path.resolve(__dirname, '../Babylon.js/packages/dev/core/dist'),
       'loaders': path.resolve(__dirname, '../Babylon.js/packages/dev/loaders/dist'),
+      // Map @babylonjs/loaders subpaths to dev package dist
+      '@babylonjs/loaders/dynamic': path.resolve(__dirname, '../Babylon.js/packages/dev/loaders/dist/dynamic.js'),
     },
   },
 

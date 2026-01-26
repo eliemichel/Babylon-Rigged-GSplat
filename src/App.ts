@@ -12,7 +12,6 @@ import {
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 
 import { getElementsByIds } from './utils';
-import { mergeGaussianSplattingMeshes } from './gsplat-utils';
 import StatusBar from './StatusBar';
 
 // Babylon objects initialized by the app and reused in other methods.
@@ -20,14 +19,14 @@ interface BabylonControllers {
     engine: Engine;
     scene: Scene;
     camera: Camera;
-    gizmoManager: GizmoManager;
+    gizmoManagers: GizmoManager[];
 }
 
 // Objects related to the mechanism that regroups all splat meshes together
 // to be rendered in a single draw call.
 interface MultiSplat {
     renderMesh: GaussianSplattingMesh;
-    nextNodeIndex: number;
+    nextPartIndex: number;
 }
 
 interface AppControllers {
@@ -100,12 +99,6 @@ export default class App {
         camera.attachControl(renderCanvas, true);
         scene.activeCamera = camera;
 
-        const gizmoManager = new GizmoManager(scene);
-        gizmoManager.positionGizmoEnabled = true;
-        gizmoManager.usePointerToAttachGizmos = false;
-
-        gizmoManager.gizmos.positionGizmo?.onDragObservable.add(() => this.onGizmoDrag());
-
         engine.runRenderLoop(() => scene.render());
         
         window.addEventListener("resize", function () {
@@ -117,7 +110,7 @@ export default class App {
             engine,
             scene,
             camera,
-            gizmoManager,
+            gizmoManagers :[],
         };
     }
 
@@ -131,18 +124,26 @@ export default class App {
         
         return {
             renderMesh,
-            nextNodeIndex: 0,
+            nextPartIndex: 0,
         };
     }
 
-    private onGizmoDrag(): void {
-        const { babylon, multiSplat } = this.controllers;
-        const { gizmoManager } = babylon;
-        const target = gizmoManager.attachedMesh;
-        if (target && target.metadata?.nodeIndex !== undefined) {
-            const nodeIndex = target.metadata.nodeIndex as number;
-            multiSplat.renderMesh.setWorldMatrixForNode(nodeIndex, target.getWorldMatrix());
-        }
+    private createGizmoManager(): GizmoManager {
+        const { multiSplat, babylon } = this.controllers;
+        const { scene } = babylon;
+        const gizmoManager = new GizmoManager(scene);
+        gizmoManager.positionGizmoEnabled = true;
+        gizmoManager.usePointerToAttachGizmos = false;
+
+        gizmoManager.gizmos.positionGizmo?.onDragObservable.add(() => {
+            const target = gizmoManager.attachedMesh;
+            if (target && target.metadata?.partIndex !== undefined) {
+                const partIndex = target.metadata.partIndex as number;
+                multiSplat.renderMesh.setWorldMatrixForPart(partIndex, target.getWorldMatrix());
+            }
+        });
+
+        return gizmoManager;
     }
 
     /* ********** PUBLIC METHODS ********** */
@@ -150,21 +151,19 @@ export default class App {
     /**
      * Load a GSplat model from a path/URL.
      * @param modelPath - The path/URL of the model to load.
-     * @param keepInRam - Keep splat data in RAM for access/editing (default: true).
      * @returns The loaded mesh.
      */
-    public async loadModel(modelPath: string, keepInRam: boolean = true): Promise<Mesh> {
+    public async loadModel(modelPath: string): Promise<Mesh> {
         const { statusBar, babylon, multiSplat } = this.controllers;
         const { scene } = babylon;
 
         const statusHandle = statusBar.setStatus(`Loading '${modelPath}'...`);
 
-        // Create mesh manually with keepInRam option to retain splatsData
         const mesh = new GaussianSplattingMesh(
             modelPath, // name
             modelPath, // url
             scene,
-            keepInRam  // keepInRam
+            true // keepInRam - so we can read back splatsData for appending
         );
 
         // Wait for loading to complete
@@ -173,30 +172,14 @@ export default class App {
             await loadingPromise;
         }
 
-        // Assign a new fresh node index to the mesh
-        const nodeIndex = multiSplat.nextNodeIndex;
-        mesh.setNodeIndex(nodeIndex);
-        multiSplat.nextNodeIndex++;
-
-        // Add the mesh to the multi-splat render mesh
-        multiSplat.renderMesh = mergeGaussianSplattingMeshes(multiSplat.renderMesh, mesh);
-
-        mesh.computeWorldMatrix(true);
-        const nodeWorldMatrix = mesh.getWorldMatrix();
-        multiSplat.renderMesh.setWorldMatrixForNode(nodeIndex, nodeWorldMatrix);
-
-        // Remove splats from the original mesh
-        mesh.dispose();
-        const placeholderMesh = new Mesh(modelPath, scene);
-        
-        // Directly set the world matrix using freezeWorldMatrix
-        placeholderMesh.freezeWorldMatrix(nodeWorldMatrix);
-        placeholderMesh.metadata = { nodeIndex: nodeIndex };
+        const placeholderMesh = multiSplat.renderMesh.addPart(mesh);
 
         statusBar.unsetStatus(statusHandle);
 
         // Attach gizmo to the latest loaded mesh
-        babylon.gizmoManager.attachToMesh(placeholderMesh);
+        const gizmoManager = this.createGizmoManager();
+        gizmoManager.attachToMesh(placeholderMesh);
+        babylon.gizmoManagers.push(gizmoManager);
 
         return placeholderMesh;
     }

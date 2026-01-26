@@ -14,6 +14,12 @@
     "moduleDetection": "force",
     "noEmit": true,
 
+    /* Path mappings for local Babylon.js */
+    "baseUrl": ".",
+    "paths": {
+      "@babylonjs/loaders/dynamic": ["../Babylon.js/packages/dev/loaders/dist/dynamic.d.ts"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
